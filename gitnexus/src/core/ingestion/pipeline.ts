@@ -2,6 +2,7 @@ import { createKnowledgeGraph } from '../graph/graph.js';
 import { processStructure } from './structure-processor.js';
 import { processMarkdown } from './markdown-processor.js';
 import { processCobol, isCobolFile, isJclFile } from './cobol-processor.js';
+import { processYaml, isYamlFile } from './yaml-processor.js';
 import { processParsing } from './parsing-processor.js';
 import {
   processImports,
@@ -605,6 +606,28 @@ async function runScanAndStructure(
       }
       if (cobolResult.jclJobs > 0) {
         console.log(`  JCL: ${cobolResult.jclJobs} jobs, ${cobolResult.jclSteps} steps`);
+      }
+    }
+  }
+
+  // ── Phase 2.7: YAML processing (service + endpoint extraction) ─────
+  const yamlScanned = scannedFiles.filter((f) => isYamlFile(f.path));
+  if (yamlScanned.length > 0) {
+    const yamlContents = await readFileContents(
+      repoPath,
+      yamlScanned.map((f) => f.path),
+    );
+    const yamlFiles = yamlScanned
+      .filter((f) => yamlContents.has(f.path))
+      .map((f) => ({ path: f.path, content: yamlContents.get(f.path)! }));
+    const allPathSet = new Set(allPaths);
+    const yamlResult = processYaml(graph, yamlFiles, allPathSet);
+    if (isDev) {
+      console.log(
+        `  YAML: ${yamlResult.services} services/interfaces, ${yamlResult.endpoints} endpoints, ${yamlResult.serviceEndpointRelations} service-endpoint links from ${yamlFiles.length} files`,
+      );
+      if (yamlResult.parseErrors > 0) {
+        console.log(`  YAML: ${yamlResult.parseErrors} file(s) had parse errors and were skipped`);
       }
     }
   }

@@ -313,6 +313,8 @@ CREATE REL TABLE ${REL_TABLE_NAME} (
   FROM File TO Route,
   FROM Function TO Route,
   FROM Method TO Route,
+  FROM Interface TO Route,
+  FROM Route TO Interface,
   FROM File TO Tool,
   FROM Function TO Tool,
   FROM Method TO Tool,

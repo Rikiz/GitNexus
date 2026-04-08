@@ -83,6 +83,8 @@ describe('LadybugDB Schema', () => {
         'IMPLEMENTS',
         'MEMBER_OF',
         'STEP_IN_PROCESS',
+        'SERVICE_EXPOSES_ENDPOINT',
+        'ENDPOINT_BELONGS_TO_SERVICE',
       ];
       for (const t of expected) {
         expect(REL_TYPES).toContain(t);
@@ -155,6 +157,11 @@ describe('LadybugDB Schema', () => {
     it('connects symbols to Process (STEP_IN_PROCESS)', () => {
       expect(RELATION_SCHEMA).toContain('FROM Function TO Process');
       expect(RELATION_SCHEMA).toContain('FROM Method TO Process');
+    });
+
+    it('connects Interface and Route for YAML service-endpoint mapping', () => {
+      expect(RELATION_SCHEMA).toContain('FROM Interface TO Route');
+      expect(RELATION_SCHEMA).toContain('FROM Route TO Interface');
     });
 
     it('has all FROM/TO pairs needed for HAS_METHOD edges', () => {

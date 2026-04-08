@@ -66,6 +66,8 @@ export const REL_TYPES = [
   'ENTRY_POINT_OF',
   'WRAPS',
   'QUERIES',
+  'SERVICE_EXPOSES_ENDPOINT',
+  'ENDPOINT_BELONGS_TO_SERVICE',
 ] as const;
 
 export type RelType = (typeof REL_TYPES)[number];
