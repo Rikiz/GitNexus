@@ -114,7 +114,12 @@ export interface SymbolTable {
   /**
    * Debugging: See how many symbols are tracked
    */
-  getStats: () => { fileCount: number; globalSymbolCount: number };
+  getStats: () => {
+    fileCount: number;
+    globalSymbolCount: number;
+    fuzzyCallCount: number;
+    fuzzyCallableCallCount: number;
+  };
 
   /**
    * Cleanup memory
@@ -149,6 +154,10 @@ export const createSymbolTable = (): SymbolTable => {
   // Only Class, Struct, Interface, Enum, Record symbols are indexed.
   const classByName = new Map<string, SymbolDefinition[]>();
   const classByQualifiedName = new Map<string, SymbolDefinition[]>();
+
+  let fuzzyCallCount = 0;
+
+  let fuzzyCallableCallCount = 0;
 
   const CALLABLE_TYPES = new Set(['Function', 'Method', 'Constructor']);
 
@@ -216,8 +225,9 @@ export const createSymbolTable = (): SymbolTable => {
     }
     globalIndex.get(name)!.push(def);
 
-    // C2. Methods with ownerId go to methodByOwner index (in addition to globalIndex).
-    if (type === 'Method' && metadata?.ownerId) {
+    // C2. Methods and constructors with ownerId go to methodByOwner index
+    // (in addition to globalIndex).
+    if ((type === 'Method' || type === 'Constructor') && metadata?.ownerId) {
       const key = `${metadata.ownerId}\0${name}`;
       const existing = methodByOwner.get(key);
       if (existing) {
@@ -266,10 +276,12 @@ export const createSymbolTable = (): SymbolTable => {
   };
 
   const lookupFuzzy = (name: string): SymbolDefinition[] => {
+    fuzzyCallCount++;
     return globalIndex.get(name) || [];
   };
 
   const lookupFuzzyCallable = (name: string): SymbolDefinition[] => {
+    fuzzyCallableCallCount++;
     if (!callableIndex) {
       // Build the callable index lazily on first use
       callableIndex = new Map();
@@ -316,6 +328,8 @@ export const createSymbolTable = (): SymbolTable => {
   const getStats = () => ({
     fileCount: fileIndex.size,
     globalSymbolCount: globalIndex.size,
+    fuzzyCallableCallCount: fuzzyCallableCallCount,
+    fuzzyCallCount: fuzzyCallCount,
   });
 
   const clear = () => {
@@ -326,6 +340,8 @@ export const createSymbolTable = (): SymbolTable => {
     methodByOwner.clear();
     classByName.clear();
     classByQualifiedName.clear();
+    fuzzyCallCount = 0;
+    fuzzyCallableCallCount = 0;
   };
 
   return {
